@@ -1,0 +1,22 @@
+{% extends 'index.html' %}
+
+{% block title %}
+<h1>Prediksi Berita Selain CNN Indonesia</h1>
+{% endblock %}
+
+{% block body %}
+
+<p>Kategori: Nasional & Internasional</p>
+
+<form method="post" action="{{ url_for('public') }}">
+    <label for="url_public">Masukkan link Berita:</label><br>
+    <input type="text" class="url" name="url_public" oninput="checkInput()" style="width: 100%;"><br><br>
+    <button class="button" type="submit">Prediksi</button>
+</form>
+
+{% if prediksi %}
+    <p><b>Judul Berita:</b> <a href="{{ url }}" target="_blank">{{ judul }}</a></p>
+    <p><b>Prediksi:</b> {{ prediksi }}</p>
+{% endif %}
+
+{% endblock %}
