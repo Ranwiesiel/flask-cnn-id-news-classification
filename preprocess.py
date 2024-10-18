@@ -10,7 +10,9 @@ import string
 import nltk
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 from nltk.corpus import stopwords
-
+nltk.download('stopwords')
+nltk.download('punkt_tab')
+nltk.download('punkt')
 
 
 # Cleaning text
