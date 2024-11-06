@@ -72,6 +72,27 @@ def public():
     else:
         return render_template("public.html")
 
+@app.route("/ringkasan-berita", methods=['POST', 'GET'])
+def ringkasan_berita():
+    if request.method == 'POST':
+        url = request.form.get('ringkasan')
+        ctrl = request.form.get('centrality')
+        if request.method == 'POST' and url != '': 
+            rksbrt, judul, url = ringkas_berita(url, ctrl)
+            return render_template("ringkasan-berita.html", ringkasan=rksbrt, judul=judul, url=url, centrality=ctrl)
+    else:
+        return render_template("ringkasan-berita.html")
+
+@app.route("/ringkasan-text", methods=['POST', 'GET'])
+def ringkasan_text():
+    if request.method == 'POST':
+        text = request.form.get('ringkasan')
+        ctrl = request.form.get('centrality')
+        if request.method == 'POST' and text != '': 
+            rksbrt = ringkas_text(text, ctrl)
+            return render_template("ringkasan-text.html", ringkasan=rksbrt, centrality=ctrl)
+    else:
+        return render_template("ringkasan-text.html")
 
 
 if __name__ == '__main__':

@@ -73,3 +73,17 @@ body {
 .button:hover {
     color: rgb(255, 81, 81);
 }
+
+#centrality {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid rgb(41, 41, 41);
+    background-color: #262730;
+    color: white;
+}
+
+#centrality:focus {
+    outline: none;
+    border: 1px solid rgb(255, 81, 81);
+}

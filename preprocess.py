@@ -3,19 +3,23 @@ from bs4 import BeautifulSoup as bs
 
 # Library untuk data manipulation & visualisasi
 import pandas as pd
+import networkx as nx
 import re
-import string
 
 # Library untuk text preprocessing
 import nltk
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 from nltk.corpus import stopwords
-nltk.download('stopwords')
-nltk.download('punkt_tab')
-nltk.download('punkt')
+# nltk.download('stopwords')
+# nltk.download('punkt_tab')
+# nltk.download('punkt')
+
+# Library untuk text vectorization & Similarity
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-# Cleaning text
+# Cleaning text Berita
 def clean_text(text: str=None) -> str:
 	"""
 	Mmembersihkan text dari karakter-karakter yang tidak diperlukan
@@ -24,15 +28,82 @@ def clean_text(text: str=None) -> str:
 	text = re.sub(r'@[^\s]+', ' ', text) # Menghapus username
 	text = re.sub(r'[\s]+', ' ', text) # Menghapus tambahan spasi
 	text = re.sub(r'#([^\s]+)', ' ', text) # Menghapus hashtags
-	text = re.sub(r'rt', ' ', text) # Menghapus retweet
-	text = text.translate(str.maketrans("","",string.punctuation)) # Menghapus tanda baca
-	text = re.sub(r'\d', ' ', text) # Menghapus angka
+	text = re.sub(r"[^a-zA-Z0-9 / :\.]", "", text) # Menghapus tanda baca
 	text = text.lower()
 	text = text.encode('ascii','ignore').decode('utf-8') #Menghapus ASCII dan unicode
 	text = re.sub(r'[^\x00-\x7f]',r'', text)
 	text = text.replace('\n','') #Menghapus baris baru
 	text = text.strip()
 	return text
+
+def preprocess_text_ringkas(text):
+	"""
+	Memproses text berita untuk ringkasan
+	"""
+	result = ""
+	cleaned_text = clean_text(text)
+	tokens = nltk.tokenize.word_tokenize(cleaned_text)
+	result = ' '.join(tokens)
+	kalimat = nltk.sent_tokenize(result)
+	return kalimat
+
+
+def network_graph(cossim):
+	"""
+	Membuat graph dari similarity matrix
+	"""
+	G_preprocessing = nx.DiGraph()
+	for i in range(len(cossim)):
+		G_preprocessing.add_node(i)
+
+	for i in range(len(cossim)):
+		for j in range(len(cossim)):
+			similarity_preprocessing = cossim[i][j]
+			if similarity_preprocessing > 0.1 and i != j:
+				G_preprocessing.add_edge(i, j)
+	return G_preprocessing
+
+def centrality(G, centrality_type="degree"):
+	"""
+	Opsi untuk menghitung nilai centrality dari graph
+	- degree
+	- eigenvector
+	- betweenness
+	- closeness
+	- pagerank
+	"""
+	if centrality_type == "degree":
+		return nx.degree_centrality(G)
+	elif centrality_type == "eigenvector":
+		return nx.eigenvector_centrality(G)
+	elif centrality_type == "betweenness":
+		return nx.betweenness_centrality(G)
+	elif centrality_type == "closeness":
+		return nx.closeness_centrality(G)
+	elif centrality_type == "pagerank":
+		return nx.pagerank(G)
+	else:
+		raise ValueError(f"Unknown centrality type: {centrality_type}")
+
+def sorted_result(node, kalimat, total=3):
+	"""
+	Mengurutkan hasil berdasarkan nilai centrality
+	"""
+	closeness_centrality = sorted(node.items(), key=lambda x: x[1], reverse=True)
+
+	ringkasan = ""
+	for node, closeness_preprocessing in closeness_centrality[:total]:
+		top_sentence = kalimat[node]
+		ringkasan += top_sentence + " "
+
+		# print(f"Node {node}: Closeness Centrality = {closeness_preprocessing:.4f}")
+		# print(f"Kalimat: {top_sentence}\n")
+	return ringkasan
+
+
+
+
+
 
 # Scraping berita
 def scrape_news(soup: str) -> dict:
@@ -105,7 +176,6 @@ def scrape_news_public(soup: str) -> dict:
 	"""
 	berita = {}
 	texts = []
-	
 	berita["judul"] = soup.title.text
 
 	for text in soup.find_all("p"):
@@ -122,7 +192,6 @@ def get_news_public(news_url: str) -> pd.DataFrame:
 	Mengambil informasi dari isi berita selain CNN ID yang ada pada url
 	"""
 	news = []
-	print(news_url)
 	result = scrape_news_public(get_html(news_url))
 	news.append(result)
 
@@ -175,3 +244,39 @@ def model_tf_idf(data, _model):
 	df_tfidf = pd.DataFrame(tfidf_matrix.toarray(), columns=feature_names)
 
 	return df_tfidf
+
+
+def ringkas_berita(url: str, ctrl: str) -> str:
+	"""
+	Mengambil ringkasan berita dari url
+	"""
+	df = get_news_public(url)
+	link = df['url'][0]
+	judul = df['judul'][0]
+	preprocessed = preprocess_text_ringkas(df['isi'][0])
+	tfidf_vectorizer = TfidfVectorizer()
+	tfidf_matrix = tfidf_vectorizer.fit_transform(preprocessed)
+	
+	cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+	G = network_graph(cosine_sim)
+	closeness_centrality = centrality(G, ctrl)
+	
+	result = sorted_result(closeness_centrality, preprocessed)
+
+	return result, judul, link
+
+def ringkas_text(text: str, ctrl: str) -> str:
+	"""
+	Mengambil ringkasan dari text
+	"""
+	preprocessed = preprocess_text_ringkas(text)
+	tfidf_vectorizer = TfidfVectorizer()
+	tfidf_matrix = tfidf_vectorizer.fit_transform(preprocessed)
+	
+	cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+	G = network_graph(cosine_sim)
+	closeness_centrality = centrality(G, ctrl)
+	
+	result = sorted_result(closeness_centrality, preprocessed)
+
+	return result

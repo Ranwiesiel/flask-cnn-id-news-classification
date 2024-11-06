@@ -1,0 +1,31 @@
+{% extends 'index.html' %}
+
+{% block title %}
+<h1>Ringkasan Text</h1>
+{% endblock %}
+
+{% block body %}
+
+<p>Ringkasan Text dengan hasil ringkasan dari beberapa kalimat pada berita (no AI).</p>
+
+<form method="post" action="{{ url_for('ringkasan_text') }}">
+    <label for="ringkasan">Masukkan Text:</label><br>
+    <textarea class="url" name="ringkasan" oninput="checkInput()" style="width: 100%;"></textarea><br><br>
+    <label for="centrality">Pilih Centrality:</label><br>
+    <select name="centrality" id="centrality">
+        <option value="degree">Degree Centrality</option>
+        <option value="closeness">Closeness Centrality</option>
+        <option value="betweenness">Betweenness Centrality</option>
+        <option value="eigenvector">Eigenvector Centrality</option>
+        <option value="pagerank">PageRank</option>
+    </select>
+    <br><br>
+    <button class="button" type="submit">Ringkas</button>
+</form>
+
+{% if ringkasan %}
+    <p><b>Dengan menggunakan:</b> {{ centrality }}</p>
+    <p><b>Ringkasan:</b> {{ ringkasan }}</p>
+{% endif %}
+
+{% endblock %}
