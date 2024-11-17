@@ -12,7 +12,7 @@
     <label for="ringkasan">Masukkan Text:</label><br>
     <textarea class="url" name="ringkasan" oninput="checkInput()" style="width: 100%;"></textarea><br><br>
     <label for="centrality">Pilih Centrality:</label><br>
-    <select name="centrality" id="centrality">
+    <select name="centrality" class="centrality">
         <option value="degree">Degree Centrality</option>
         <option value="closeness">Closeness Centrality</option>
         <option value="betweenness">Betweenness Centrality</option>
@@ -25,7 +25,82 @@
 
 {% if ringkasan %}
     <p><b>Dengan menggunakan:</b> {{ centrality }}</p>
-    <p><b>Ringkasan:</b> {{ ringkasan }}</p>
+
+    <div class="container mt-5">
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="teks-berita-tab" data-toggle="tab" href="#teks-berita" role="tab" aria-controls="teks-berita" aria-selected="true">Teks Berita</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="node-grafik-tab" data-toggle="tab" href="#node-grafik" role="tab" aria-controls="node-grafik" aria-selected="false">Node Grafik</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="hasil-ringkasan-tab" data-toggle="tab" href="#hasil-ringkasan" role="tab" aria-controls="hasil-ringkasan" aria-selected="false">Hasil Ringkasan</a>
+            </li>
+        </ul>
+        
+        <!-- Tabs Content -->
+        <div class="tab-content mt-4" id="myTabContent">
+            
+            <!-- Teks Berita Tab -->
+            <div class="tab-pane fade show active" id="teks-berita" role="tabpanel" aria-labelledby="teks-berita-tab">
+                <p class="text-justify">{{ text }}</p>
+            </div>
+            
+            <!-- Node Grafik Tab -->
+            <div class="tab-pane fade" id="node-grafik" role="tabpanel" aria-labelledby="node-grafik-tab">
+                <div class="text-center">
+                    <img src="data:image/png;base64,{{ grafik }}" alt="Graph Node Visualization" class="img-fluid mb-3">
+                    <!-- Display additional information on graph nodes -->
+                    <div class="text-left mt-3">
+                        {% for key, value in ringkasan.items() %}
+                            <div class="card my-2 text-white bg-dark">
+                                <div class="card-body ">
+                                    <h5 class="card-title">Index: {{ key }}</h5>
+                                    <div class="card-text"><strong>Closeness Preprocessing:</strong> {{ value.closeness_preprocessing }}</div>
+                                    <div class="card-text">{{ value.top_sentence }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hasil Ringkasan Tab -->
+            <div class="tab-pane fade" id="hasil-ringkasan" role="tabpanel" aria-labelledby="hasil-ringkasan-tab">
+                <div class="form-group">
+                    <label for="num_sentences" class="font-weight-bold">Number of Sentences:</label>
+                    <input type="number" id="num_sentences" name="num_sentences" class="form-control w-auto" min="1" max="{{ ringkasan|length }}" value="2" onkeyup="adjustSentences()">
+                </div>
+                <div id="summary_output" class="mt-3">
+                    <!-- Initial Summary Content -->
+                    {% for key, value in ringkasan.items() %}
+                        <span>{{ value.top_sentence }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function adjustSentences() {
+            var numSentences = document.getElementById('num_sentences').value;
+            var summaryOutput = document.getElementById('summary_output');
+            var allSentences = Array.from(summaryOutput.getElementsByTagName('span'));
+            
+            allSentences.forEach(function (span, index) {
+                span.style.display = index < numSentences ? 'block' : 'none';
+            });
+        }
+
+        $(document).ready(function(){
+            $('#myTab a').on('click', function (e) {
+                e.preventDefault();
+                $(this).tab('show');
+            });
+        });
+    </script>
 {% endif %}
 
 {% endblock %}

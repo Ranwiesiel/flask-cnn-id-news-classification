@@ -91,14 +91,15 @@ def sorted_result(node, kalimat, total=3):
 	"""
 	closeness_centrality = sorted(node.items(), key=lambda x: x[1], reverse=True)
 
-	ringkasan = ""
-	for node, closeness_preprocessing in closeness_centrality[:total]:
-		top_sentence = kalimat[node]
-		ringkasan += top_sentence + " "
-
+	node_clossness = {}
+	for node, closeness_preprocessing in closeness_centrality:
+		node_clossness[node] = {
+			'closeness_preprocessing': closeness_preprocessing,
+			'top_sentence': kalimat[node]
+		}
 		# print(f"Node {node}: Closeness Centrality = {closeness_preprocessing:.4f}")
 		# print(f"Kalimat: {top_sentence}\n")
-	return ringkasan
+	return node_clossness
 
 
 
@@ -251,6 +252,7 @@ def ringkas_berita(url: str, ctrl: str) -> str:
 	Mengambil ringkasan berita dari url
 	"""
 	df = get_news_public(url)
+	text = df['isi'][0]
 	link = df['url'][0]
 	judul = df['judul'][0]
 	preprocessed = preprocess_text_ringkas(df['isi'][0])
@@ -263,7 +265,7 @@ def ringkas_berita(url: str, ctrl: str) -> str:
 	
 	result = sorted_result(closeness_centrality, preprocessed)
 
-	return result, judul, link
+	return result, judul, link, text, G
 
 def ringkas_text(text: str, ctrl: str) -> str:
 	"""
@@ -279,4 +281,4 @@ def ringkas_text(text: str, ctrl: str) -> str:
 	
 	result = sorted_result(closeness_centrality, preprocessed)
 
-	return result
+	return result, G, preprocessed

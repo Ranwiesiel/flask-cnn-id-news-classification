@@ -1,4 +1,7 @@
-from flask import Flask, render_template, url_for, request
+from flask import Flask, render_template, request
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 
 from preprocess import *
 import pickle
@@ -36,6 +39,22 @@ def prediksi_berita_public(link_news):
     prediction = lr_model.predict(tfidf)
 
     return f'{labels_encode[prediction[0]]}', news['judul'][0], news['url'][0]
+
+
+plt.switch_backend('agg')
+def graph(G):
+    pos = nx.spring_layout(G, k=2)
+    nx.draw(G, pos, with_labels=True, font_weight='bold', font_size=10)
+    nx.draw_networkx_nodes(G, pos, node_size=500, node_color='skyblue')
+    nx.draw_networkx_edges(G, pos, edge_color='gray', arrows=True)
+    nx.draw_networkx_labels(G, pos)
+    img = BytesIO()
+    plt.savefig(img, format='png', dpi=100)
+    img.seek(0)
+    plt.clf()
+
+    img_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
+    return img_base64
 
  
 
@@ -77,9 +96,13 @@ def ringkasan_berita():
     if request.method == 'POST':
         url = request.form.get('ringkasan')
         ctrl = request.form.get('centrality')
-        if request.method == 'POST' and url != '': 
-            rksbrt, judul, url = ringkas_berita(url, ctrl)
-            return render_template("ringkasan-berita.html", ringkasan=rksbrt, judul=judul, url=url, centrality=ctrl)
+        if request.method == 'POST' and url.strip(): 
+            result, judul, url, text, G = ringkas_berita(url, ctrl)
+            grafik_base64 = graph(G)
+            return render_template("ringkasan-berita.html", teks_berita=text, ringkasan=result, judul=judul, url=url, centrality=ctrl, grafik=grafik_base64)
+        
+        else:
+            return render_template("ringkasan-berita.html")
     else:
         return render_template("ringkasan-berita.html")
 
@@ -89,8 +112,13 @@ def ringkasan_text():
         text = request.form.get('ringkasan')
         ctrl = request.form.get('centrality')
         if request.method == 'POST' and text != '': 
-            rksbrt = ringkas_text(text, ctrl)
-            return render_template("ringkasan-text.html", ringkasan=rksbrt, centrality=ctrl)
+            result, G, process_text = ringkas_text(text, ctrl)
+            text = text.join(process_text)
+            grafik_base64 = graph(G)
+            return render_template("ringkasan-text.html", text=text, ringkasan=result, centrality=ctrl, grafik=grafik_base64)
+        
+        else:
+            return render_template("ringkasan-text.html")
     else:
         return render_template("ringkasan-text.html")
 

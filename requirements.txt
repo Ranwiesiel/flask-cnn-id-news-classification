@@ -7,3 +7,4 @@ requests==2.32.3
 scikit-learn==1.4.2
 html5lib==1.1
 Flask==3.0.3
+matplotlib==3.9.2
